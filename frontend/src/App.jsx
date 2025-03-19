@@ -8,14 +8,24 @@ const App = () => {
     const [loading, setLoading] = useState(false);
 
     const fetchRecommendation = async () => {
-        try {
-            setError(null);
-            setLoading(true);
+        setError(null);
+        setRecommendation(null);
+        
+        if (!state.trim() || !season.trim()) {
+            setError("Please enter both State and Season.");
+            return;
+        }
 
+        setLoading(true);
+
+        try {
             const response = await fetch("http://localhost:3000/recommend-crop", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ state, season }),
+                body: JSON.stringify({ 
+                    state: state.charAt(0).toUpperCase() + state.slice(1).toLowerCase(), 
+                    season 
+                }),
             });
 
             const data = await response.json();
@@ -25,12 +35,10 @@ const App = () => {
                 setRecommendation(data);
             } else {
                 setError(data.error || "Something went wrong");
-                setRecommendation(null);
             }
         } catch (err) {
             setLoading(false);
             setError("Failed to fetch crop recommendation");
-            setRecommendation(null);
         }
     };
 
@@ -45,13 +53,18 @@ const App = () => {
                 onChange={(e) => setState(e.target.value)}
                 style={{ padding: "10px", fontSize: "16px", marginRight: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
             />
-            <input
-                type="text"
-                placeholder="Enter Season"
-                value={season}
+
+            <select 
+                value={season} 
                 onChange={(e) => setSeason(e.target.value)}
                 style={{ padding: "10px", fontSize: "16px", marginRight: "10px", borderRadius: "5px", border: "1px solid #ccc" }}
-            />
+            >
+                <option value="">Select Season</option>
+                <option value="Kharif">Kharif</option>
+                <option value="Rabi">Rabi</option>
+                <option value="Zaid">Zaid</option>
+            </select>
+
             <button 
                 onClick={fetchRecommendation} 
                 style={{ padding: "10px 15px", fontSize: "16px", borderRadius: "5px", cursor: "pointer" }}>
