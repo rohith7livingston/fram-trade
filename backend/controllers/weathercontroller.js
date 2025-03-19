@@ -8,7 +8,6 @@ const getWeather = async (req, res) => {
             return res.status(400).json({ error: "City name is required" });
         }
 
-        // Fetch latitude & longitude using Open-Meteo's geocoding API
         const geoApiUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&format=json`;
         const geoResponse = await axios.get(geoApiUrl);
 
@@ -18,15 +17,31 @@ const getWeather = async (req, res) => {
 
         const { latitude, longitude, name, country } = geoResponse.data.results[0];
 
-        // Fetch detailed weather information
-        const weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,pressure_msl`;
+        const weatherApiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
         const weatherResponse = await axios.get(weatherApiUrl);
 
-        // Extract current weather details
         const { temperature, windspeed, weathercode } = weatherResponse.data.current_weather;
-        const humidity = weatherResponse.data.hourly.relative_humidity_2m[0];
-        const precipitation = weatherResponse.data.hourly.precipitation[0];
-        const pressure = weatherResponse.data.hourly.pressure_msl[0];
+
+        const weatherConditions = {
+            0: "Clear sky ☀️",
+            1: "Mainly clear 🌤️",
+            2: "Partly cloudy ⛅",
+            3: "Overcast ☁️",
+            45: "Fog 🌫️",
+            48: "Depositing rime fog 🌫️",
+            51: "Light drizzle 🌦️",
+            53: "Moderate drizzle 🌦️",
+            55: "Dense drizzle 🌦️",
+            61: "Light rain 🌧️",
+            63: "Moderate rain 🌧️",
+            65: "Heavy rain 🌧️",
+            71: "Light snow ❄️",
+            73: "Moderate snow ❄️",
+            75: "Heavy snow ❄️",
+            80: "Light showers 🌦️",
+            81: "Moderate showers 🌦️",
+            82: "Heavy showers 🌦️"
+        };
 
         res.json({
             city: name,
@@ -36,13 +51,11 @@ const getWeather = async (req, res) => {
             weather: {
                 temperature: `${temperature}°C`,
                 wind_speed: `${windspeed} km/h`,
-                humidity: `${humidity}%`,
-                precipitation: `${precipitation} mm`,
-                pressure: `${pressure} hPa`,
-                weather_code: weathercode
+                condition: weatherConditions[weathercode] || "Unknown condition"
             }
         });
     } catch (error) {
+        console.error("Error fetching weather:", error);
         res.status(500).json({ error: "Failed to fetch weather data", details: error.message });
     }
 };
